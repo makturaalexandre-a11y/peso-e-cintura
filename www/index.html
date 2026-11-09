@@ -1,0 +1,1038 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Peso e Cintura</title>
+<meta name="description" content="Registro semanal de peso e cintura com IMC, metas e gráficos de evolução.">
+<link rel="icon" type="image/png" href="icons/favicon-32.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>
+@font-face{font-family:"Bricolage Grotesque";font-weight:600;font-display:swap;src:url(fonts/bricolage-grotesque-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Bricolage Grotesque";font-weight:700;font-display:swap;src:url(fonts/bricolage-grotesque-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Figtree";font-weight:400;font-display:swap;src:url(fonts/figtree-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Figtree";font-weight:500;font-display:swap;src:url(fonts/figtree-latin-500-normal.woff2) format("woff2")}
+@font-face{font-family:"Figtree";font-weight:600;font-display:swap;src:url(fonts/figtree-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Figtree";font-weight:700;font-display:swap;src:url(fonts/figtree-latin-700-normal.woff2) format("woff2")}
+</style>
+<style>
+/* Layout: resumo da última semana, depois registro + metas lado a lado, gráficos em grade 2x2, comparativo e histórico.
+   Cores: peso = azul, cintura = laranja, IMC = verde-água (mesma cor em todo lugar). Neutros com leve viés azulado. */
+:root{
+  --bg:#f2f5f8; --surface:#fcfdfe; --ink:#0e1620; --ink2:#47525f; --muted:#66717d;
+  --line:#dde3ea; --grid:#e6ebf0; --axis:#c3ccd6; --soft:#e8edf3; --band:rgba(90,110,135,.13);
+  --c-weight:#2a78d6; --c-waist:#eb6834; --c-bmi:#1baf7a;
+  --good:#006300; --bad:#c23232; --warn:#8a5a00;
+  --fig-now:#6d7f94; --fig-goal:#eb6834; --fig-ideal:#1baf7a;
+  --z-under:#8aa6c4; --z-ok:#0ca30c; --z-over:#fab219; --z-ob1:#ec835a; --z-ob2:#d03b3b; --z-ob3:#962525;
+  --display:"Bricolage Grotesque",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1319; --surface:#161d25; --ink:#eef2f6; --ink2:#b4bfcb; --muted:#8c97a3;
+    --line:#27313c; --grid:#222b35; --axis:#3a4552; --soft:#1d2630; --band:rgba(140,160,185,.14);
+    --c-weight:#3987e5; --c-waist:#d95926; --c-bmi:#199e70;
+    --good:#0ca30c; --bad:#e66767; --warn:#f0b840; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1319; --surface:#161d25; --ink:#eef2f6; --ink2:#b4bfcb; --muted:#8c97a3;
+  --line:#27313c; --grid:#222b35; --axis:#3a4552; --soft:#1d2630; --band:rgba(140,160,185,.14);
+  --c-weight:#3987e5; --c-waist:#d95926; --c-bmi:#199e70;
+  --good:#0ca30c; --bad:#e66767; --warn:#f0b840; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:400 15px/1.45 var(--body);
+  padding-block:20px 48px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+h1,h2,h3,p{margin:0}
+.wrap{max-width:980px;margin-inline:auto;display:flex;flex-direction:column;gap:16px}
+.head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 16px}
+h1{font:700 30px/1.05 var(--display);letter-spacing:-.02em}
+h2{font:700 18px/1.2 var(--display);letter-spacing:-.01em}
+.sub{color:var(--ink2);font-size:14px}
+.note{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 16px;background:var(--soft);border-radius:12px;padding:12px 14px;font-size:14px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;min-width:0}
+.card>h2{margin-bottom:12px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:8px;min-width:0}
+.tile-head{display:flex;align-items:center;gap:8px;color:var(--ink2);font-weight:600;font-size:14px}
+.dot{width:10px;height:10px;border-radius:50%;background:var(--c)}
+.tile .num{font:700 42px/1 var(--display);letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.tile .unit{color:var(--ink2);font-size:15px;margin-left:5px;font-weight:500}
+.delta{display:flex;flex-wrap:wrap;align-items:baseline;gap:2px 8px;font-size:14px}
+.delta b{font-weight:700;font-variant-numeric:tabular-nums}
+.good{color:var(--good)}.bad{color:var(--bad)}.warnc{color:var(--warn)}.flat{color:var(--ink2)}
+.tile-sub{color:var(--ink2);font-size:13.5px}
+.chip{display:inline-flex;align-items:center;gap:6px;align-self:flex-start;padding:2px 10px;border-radius:999px;background:var(--soft);font-size:13px;font-weight:600}
+.duo{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,400px),1fr));gap:16px;align-items:start}
+.formrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;align-items:end}
+label{display:grid;gap:6px;font-size:13px;font-weight:600;color:var(--ink2)}
+input,select{font:500 16px var(--body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:10px 12px;min-height:44px;width:100%;min-width:0}
+.formact{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:12px}
+.btn{min-height:44px;border:0;border-radius:10px;background:var(--ink);color:var(--bg);font:700 15px var(--body);padding:0 18px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn.small{min-height:36px;padding:0 12px;font-size:13px}
+.btn:disabled{opacity:.55;cursor:default}
+:focus-visible{outline:2px solid var(--c-weight);outline-offset:2px}
+.msg{font-size:13.5px;color:var(--ink2)}
+.msg.err{color:var(--bad)}.msg.okm{color:var(--good)}
+.hint{color:var(--ink2);font-size:13px;margin-top:12px}
+dl.goals{display:grid;gap:0;margin:16px 0 0}
+dl.goals>div{display:grid;grid-template-columns:1fr auto;gap:2px 12px;padding:10px 0;border-top:1px solid var(--line)}
+dl.goals dt{color:var(--ink2);font-size:14px}
+dl.goals dd{margin:0;font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+dl.goals dd.why{grid-column:1/-1;text-align:left;font-weight:400;color:var(--ink2);font-size:13px}
+.prog{display:grid;gap:6px;margin-top:12px}
+.prog-top{display:flex;justify-content:space-between;gap:12px;font-size:13.5px;color:var(--ink2)}
+.prog-top b{color:var(--ink)}
+.bar{height:8px;border-radius:99px;background:var(--soft);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--c);border-radius:99px}
+.sec-head{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 16px}
+.seg{display:inline-flex;background:var(--soft);border-radius:11px;padding:3px;gap:2px;max-width:100%}
+.seg button{border:0;background:transparent;color:var(--ink2);font:600 13px var(--body);padding:7px 12px;border-radius:8px;min-height:36px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.16)}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,420px),1fr));gap:16px}
+.chead{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:4px 12px;margin-bottom:6px}
+.chead h2{display:flex;align-items:center;gap:8px}
+.now{font:700 20px var(--display);font-variant-numeric:tabular-nums}
+.cw{position:relative}
+.ch{display:block;width:100%;height:auto;touch-action:pan-y}
+.ch .grid{stroke:var(--grid);stroke-width:1}
+.ch .axis{stroke:var(--axis);stroke-width:1}
+.ch text{font:500 11.5px var(--body);fill:var(--muted)}
+.ch .tk{text-anchor:end}
+.ch .mid{text-anchor:middle}
+.ch .lab{fill:var(--ink);font-weight:700;font-size:12px}
+.ch .xh{stroke:var(--axis);stroke-width:1}
+.ch .xc{fill:var(--surface);stroke-width:2.5}
+.ch .band{fill:var(--band)}
+.ch .tgt{stroke:var(--ink2);stroke-dasharray:5 4;stroke-width:1.5}
+.ch text.tgtl{fill:var(--ink2);font-weight:600;text-anchor:end}
+.tip{position:absolute;top:2px;pointer-events:none;background:var(--ink);color:var(--bg);border-radius:8px;padding:6px 10px;font-size:12.5px;line-height:1.35;white-space:nowrap;transform:translateX(-50%);z-index:2;display:grid;gap:1px}
+.tip small{opacity:.8;font-size:12px}
+.legend{display:flex;flex-wrap:wrap;gap:4px 16px;color:var(--ink2);font-size:12.5px;margin-top:6px;min-height:18px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:18px;height:10px;border-radius:3px;display:inline-block}
+.sw.band{background:var(--band);border:1px solid var(--axis)}
+.sw.dash{height:0;border-top:2px dashed var(--ink2);border-radius:0}
+.empty{color:var(--ink2);font-size:14px;padding:36px 0;text-align:center}
+.scroll{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14px}
+th{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--ink2);text-align:right;padding:8px 10px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:10px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+tr:last-child td{border-bottom:0}
+table.hist{min-width:700px}
+table.cmp{min-width:380px}
+.acts{display:flex;gap:6px;justify-content:flex-end}
+.tag{font-size:11.5px;font-weight:700;background:var(--soft);color:var(--ink2);border-radius:6px;padding:1px 6px;margin-left:6px}
+.bmi-card{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:20px 28px;align-items:start}
+@media (max-width:760px){.bmi-card{grid-template-columns:1fr}}
+.bmi-card>h2{grid-column:1/-1;margin:0}
+.scale{position:relative;padding-top:46px}
+.scale-bar{display:flex;gap:2px;height:16px}
+.scale-bar span{flex:var(--g) 1 0;background:var(--z);min-width:0}
+.scale-bar span:first-child{border-radius:6px 0 0 6px}
+.scale-bar span:last-child{border-radius:0 6px 6px 0}
+.scale-bar span.cur{box-shadow:0 0 0 2px var(--surface),0 0 0 4px var(--ink)}
+.scale-names{display:flex;gap:2px;margin-top:8px}
+.scale-names span{flex:var(--g) 1 0;min-width:0;font-size:12px;color:var(--ink2);text-align:center;line-height:1.2;overflow-wrap:anywhere}
+.scale-names span.cur{color:var(--ink);font-weight:700}
+.scale-ticks{position:relative;height:16px;margin-top:4px}
+.scale-ticks span{position:absolute;transform:translateX(-50%);font-size:11.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.pin{position:absolute;top:0;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:2px;white-space:nowrap}
+.pin b{background:var(--ink);color:var(--bg);font-size:13px;font-weight:700;padding:3px 9px;border-radius:7px;font-variant-numeric:tabular-nums}
+.pin i{width:0;height:0;border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid var(--ink)}
+.facts{display:grid;gap:0;margin:0}
+.facts>div{padding:10px 0;border-top:1px solid var(--line);display:grid;gap:2px}
+.facts>div:first-child{border-top:0;padding-top:0}
+.facts dt{color:var(--ink2);font-size:13.5px}
+.facts dd{margin:0;font:700 19px/1.25 var(--display);font-variant-numeric:tabular-nums}
+.facts dd small{display:block;font:400 13px/1.4 var(--body);color:var(--ink2)}
+.body-figs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;align-items:start}
+.body-figs.over{grid-template-columns:1fr;justify-items:center}
+.fig{display:flex;flex-direction:column;align-items:center;gap:8px;min-width:0}
+.fig svg{display:block;width:100%;max-width:220px;height:auto}
+.body-figs.over .fig svg{max-width:280px}
+.fig-cap{display:grid;gap:2px;text-align:center;font-size:12.5px;color:var(--ink2);font-variant-numeric:tabular-nums}
+.fig-cap b{font:700 15px var(--display);color:var(--ink);display:flex;align-items:center;justify-content:center;gap:6px}
+.fig-cap i{font-style:normal;color:var(--muted)}
+.fig-legend{display:flex;flex-wrap:wrap;justify-content:center;gap:4px 16px;font-size:13px;color:var(--ink2)}
+.fig-legend span{display:inline-flex;align-items:center;gap:6px}
+.fc-table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.fcast{display:grid;gap:12px}
+.fc-row{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;align-items:start;padding-top:12px;border-top:1px solid var(--line)}
+.fc-row:first-child{border-top:0;padding-top:0}
+.fc-row .dot{margin-top:6px}
+.fc-row h3{font:700 15px var(--display)}
+.fc-row .big{font:700 20px/1.25 var(--display);font-variant-numeric:tabular-nums}
+.fc-row p{color:var(--ink2);font-size:13.5px}
+.fc-row>div{display:grid;gap:3px;min-width:0}
+.switch-row{display:flex;flex-wrap:wrap;align-items:center;gap:8px 14px;margin-top:12px}
+.native-only{}
+.foot{color:var(--ink2);font-size:12.5px;display:grid;gap:6px}
+.foot p{max-width:70ch}
+@media (prefers-reduced-motion:no-preference){.bar i{transition:width .4s ease}}
+</style>
+
+</head>
+<body>
+<main class="wrap">
+  <header class="head">
+    <h1>Peso e Cintura</h1>
+    <p class="sub" id="lastInfo">Carregando…</p>
+  </header>
+
+  <div class="note" id="banner" hidden>
+    <span>Você está vendo dados de exemplo. Registre sua primeira medição e eles somem.</span>
+    <button class="btn small" type="button" id="goForm">Registrar agora</button>
+  </div>
+
+  <section class="tiles" id="tiles" aria-label="Resumo da última medição"></section>
+
+  <section class="card bmi-card" id="bmiCard" aria-labelledby="bmiTitle">
+    <h2 id="bmiTitle">Sua faixa de IMC</h2>
+    <div class="scale" id="bmiScale"></div>
+    <dl class="facts" id="bmiFacts"></dl>
+  </section>
+
+  <section class="card" id="fcCard" aria-labelledby="fcTitle">
+    <h2 id="fcTitle">Previsão da meta</h2>
+    <div class="fcast" id="fcast"></div>
+    <p class="hint">Calculada pela tendência das suas últimas 8 medições (regressão linear). É uma projeção do ritmo atual, não uma promessa: o ritmo costuma desacelerar com o tempo.</p>
+  </section>
+
+  <section class="card" id="bodyCard" aria-labelledby="bodyTitle">
+    <div class="sec-head" style="margin-bottom:12px">
+      <h2 id="bodyTitle">Modelo do corpo</h2>
+      <div class="seg" id="figSeg" role="group" aria-label="Modo do modelo do corpo">
+        <button type="button" data-f="side" aria-pressed="true">Lado a lado</button>
+        <button type="button" data-f="over" aria-pressed="false">Sobrepostos</button>
+      </div>
+    </div>
+    <div class="body-figs" id="bodyFigs"></div>
+    <p class="hint" id="bodyNote"></p>
+  </section>
+
+  <div class="duo">
+    <section class="card" id="formCard">
+      <h2>Registrar medição</h2>
+      <form id="entryForm" novalidate>
+        <div class="formrow">
+          <label for="fDate">Data<input id="fDate" type="date" required></label>
+          <label for="fW">Peso (kg)<input id="fW" type="number" inputmode="decimal" step="0.1" min="25" max="400" placeholder="ex.: 83,4"></label>
+          <label for="fC">Cintura (cm)<input id="fC" type="number" inputmode="decimal" step="0.1" min="40" max="250" placeholder="ex.: 90,5"></label>
+          <label for="fQ">Quadril (cm, opcional)<input id="fQ" type="number" inputmode="decimal" step="0.1" min="50" max="250" placeholder="ex.: 102"></label>
+        </div>
+        <div class="formact">
+          <button class="btn" id="fBtn" type="submit">Salvar medição</button>
+          <p class="msg" id="fMsg" role="status"></p>
+        </div>
+      </form>
+      <p class="hint">Meça a cintura na altura do umbigo, ao fim de uma expiração normal, sempre no mesmo dia e horário da semana. Quadril: na parte mais larga do bumbum, com a fita paralela ao chão. Salvar de novo na mesma data substitui a medição anterior.</p>
+    </section>
+
+    <section class="card" id="goalCard">
+      <h2>Seus dados e metas</h2>
+      <form id="profForm" novalidate>
+        <div class="formrow">
+          <label for="pH">Altura (cm)<input id="pH" type="number" inputmode="numeric" step="1" min="120" max="230"></label>
+          <label for="pS">Sexo (limite de cintura)<select id="pS"><option value="m">Masculino</option><option value="f">Feminino</option></select></label>
+          <label for="pG">Meta de peso (kg)<input id="pG" type="number" inputmode="decimal" step="0.1" min="25" max="400" placeholder="opcional"></label>
+          <button class="btn ghost" type="submit" id="pBtn">Salvar dados</button>
+        </div>
+      </form>
+      <p class="msg" id="pMsg" role="status" style="margin-top:8px"></p>
+      <div id="goals"></div>
+    </section>
+  </div>
+
+  <section aria-labelledby="evoTitle" style="display:flex;flex-direction:column;gap:12px">
+    <div class="sec-head">
+      <h2 id="evoTitle">Evolução</h2>
+      <div class="seg" id="rangeSeg" role="group" aria-label="Período dos gráficos">
+        <button type="button" data-r="8" aria-pressed="false">8 semanas</button>
+        <button type="button" data-r="26" aria-pressed="false">6 meses</button>
+        <button type="button" data-r="all" aria-pressed="true">Tudo</button>
+      </div>
+    </div>
+    <div class="charts">
+      <article class="card">
+        <div class="chead"><h2><span class="dot" style="--c:var(--c-weight)"></span>Peso</h2><span class="now" id="nowW"></span></div>
+        <div class="cw" id="chW"></div><p class="legend" id="lgW"></p>
+      </article>
+      <article class="card">
+        <div class="chead"><h2><span class="dot" style="--c:var(--c-waist)"></span>Cintura</h2><span class="now" id="nowC"></span></div>
+        <div class="cw" id="chC"></div><p class="legend" id="lgC"></p>
+      </article>
+      <article class="card">
+        <div class="chead"><h2><span class="dot" style="--c:var(--c-bmi)"></span>IMC</h2><span class="now" id="nowB"></span></div>
+        <div class="cw" id="chB"></div><p class="legend" id="lgB"></p>
+      </article>
+      <article class="card">
+        <div class="chead"><h2>Variação semanal</h2>
+          <div class="seg" id="metricSeg" role="group" aria-label="Medida da variação">
+            <button type="button" data-m="weight" aria-pressed="true">Peso</button>
+            <button type="button" data-m="waist" aria-pressed="false">Cintura</button>
+            <button type="button" data-m="bmi" aria-pressed="false">IMC</button>
+          </div>
+        </div>
+        <div class="cw" id="chD"></div><p class="legend" id="lgD">Cada barra é a diferença para a medição anterior.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="card" id="cmpCard">
+    <h2>Comparativo com a semana anterior</h2>
+    <div class="scroll" id="cmp"></div>
+  </section>
+
+  <section class="card">
+    <h2>Histórico</h2>
+    <div class="scroll" id="hist"></div>
+  </section>
+
+  <section class="card" id="remCard" aria-labelledby="remTitle">
+    <h2 id="remTitle">Lembrete semanal</h2>
+    <p class="sub" id="remWeb" hidden>O lembrete funciona no app instalado no Android.</p>
+    <div id="remNative">
+      <div class="formrow">
+        <label for="rDay">Dia<select id="rDay"><option value="2">Segunda</option><option value="3">Terça</option><option value="4">Quarta</option><option value="5">Quinta</option><option value="6">Sexta</option><option value="7">Sábado</option><option value="1">Domingo</option></select></label>
+        <label for="rTime">Horário<input id="rTime" type="time" value="08:00"></label>
+        <button class="btn" type="button" id="rBtn">Ativar lembrete</button>
+      </div>
+      <p class="msg" id="rMsg" role="status" style="margin-top:10px"></p>
+    </div>
+  </section>
+
+  <section class="card" id="backupCard">
+    <h2>Backup</h2>
+    <p class="sub">Suas medições ficam salvas só neste celular. A cada registro, o app grava sozinho uma cópia em <b>Documentos/PesoECintura</b>. Para guardar fora do celular, exporte e mande para o Drive, e-mail ou WhatsApp. Para restaurar, importe o arquivo .json.</p>
+    <p class="msg" id="autoMsg" style="margin-top:10px"></p>
+    <div class="formact">
+      <button class="btn" type="button" id="bExp">Exportar backup</button>
+      <button class="btn ghost" type="button" id="bCsv">Exportar planilha (CSV)</button>
+      <label class="btn ghost" for="bImp" style="display:inline-flex;align-items:center">Importar backup</label>
+      <input id="bImp" type="file" accept=".json,application/json" hidden>
+      <p class="msg" id="bMsg" role="status"></p>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <p><b>Referências usadas.</b> IMC pela OMS (adultos): 18,5 a 24,9 é a faixa normal. Relação cintura/quadril pela OMS (2008): risco aumentado a partir de 0,90 (homens) e 0,85 (mulheres). Cintura pela IDF/OMS: risco aumentado a partir de 94 cm (homens) e 80 cm (mulheres), muito aumentado a partir de 102 e 88 cm. A cintura desejada é o menor valor entre o limite do seu sexo e metade da sua altura (razão cintura/altura abaixo de 0,5, usada em diretrizes como a do NICE).</p>
+    <p>Estimativas gerais para adultos. O IMC não separa massa muscular de gordura e nada aqui substitui avaliação médica ou nutricional.</p>
+    <p id="storeInfo">Funciona sem internet. Os dados ficam apenas neste aparelho.</p>
+  </footer>
+</main>
+
+<script src="js/capacitor.js"></script>
+<script src="js/synapse.js"></script>
+<script>var synapse=window.outsystemsSynapse||{};</script>
+<script src="js/filesystem.js"></script>
+<script src="js/share.js"></script>
+<script src="js/local-notifications.js"></script>
+<script>
+/*CALC*/
+const BMI_LO=18.5,BMI_HI=24.9,BMI_REF=22;
+const MONTHS=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
+const WD=['dom','seg','ter','qua','qui','sex','sáb'];
+function bmi(kg,cm){const m=cm/100;return kg/(m*m)}
+function bmiClass(b){return b<18.5?'Abaixo do peso':b<25?'Peso normal':b<30?'Sobrepeso':b<35?'Obesidade grau I':b<40?'Obesidade grau II':'Obesidade grau III'}
+const BMI_BANDS=[
+  {k:'under',name:'Abaixo do peso',short:'Abaixo',lo:null,hi:18.5,z:'var(--z-under)'},
+  {k:'ok',name:'Peso normal',short:'Normal',lo:18.5,hi:25,z:'var(--z-ok)'},
+  {k:'over',name:'Sobrepeso',short:'Sobre­peso',lo:25,hi:30,z:'var(--z-over)'},
+  {k:'ob1',name:'Obesidade grau I',short:'Ob. I',lo:30,hi:35,z:'var(--z-ob1)'},
+  {k:'ob2',name:'Obesidade grau II',short:'Ob. II',lo:35,hi:40,z:'var(--z-ob2)'},
+  {k:'ob3',name:'Obesidade grau III',short:'Ob. III',lo:40,hi:null,z:'var(--z-ob3)'}
+];
+function bmiBandIdx(b){for(let i=0;i<BMI_BANDS.length;i++){const z=BMI_BANDS[i];if((z.lo==null||b>=z.lo)&&(z.hi==null||b<z.hi))return i}return 0}
+function bandRangeTxt(z){return z.lo==null?'abaixo de 18,5':z.hi==null?'40 ou mais':nf(z.lo,1)+' a '+nf(z.hi-0.1,1)}
+/* kg para entrar na faixa saudável: >0 = perder, <0 = ganhar, 0 = já está */
+function kgToHealthy(kg,cm){const r=weightRange(cm),b=bmi(kg,cm);if(b>=BMI_LO&&b<25)return 0;return kg>r.hi?kg-r.hi:kg<r.lo?kg-r.lo:0}
+function weightRange(cm){const m2=(cm/100)*(cm/100);return {lo:BMI_LO*m2,hi:BMI_HI*m2,ref:BMI_REF*m2}}
+function waistRef(cm,sex){const inc=sex==='f'?80:94,very=sex==='f'?88:102,half=cm/2;return {inc:inc,very:very,half:half,target:Math.min(inc,half)}}
+function waistStatus(w,cm,sex){
+  const r=waistRef(cm,sex);
+  if(w>=r.very)return {k:'high',t:'Risco muito aumentado'};
+  if(w>=r.inc)return {k:'warn',t:'Risco aumentado'};
+  if(w>r.target)return {k:'near',t:'Acima da meta'};
+  return {k:'ok',t:'Dentro da meta'};
+}
+function whrRef(sex){return sex==='f'?0.85:0.90}
+function whrStatus(r,sex){return r>=whrRef(sex)?{k:'warn',t:'Risco aumentado'}:{k:'ok',t:'Dentro do recomendado'}}
+/* tendência: regressão linear das últimas n medições (até 8), em unidades por semana */
+function trend(pts,n){
+  n=n||8;const P=pts.slice(-n);if(P.length<3)return null;
+  const t0=P[0].t,X=P.map(function(p){return (p.t-t0)/(7*864e5)}),Y=P.map(function(p){return p.v});
+  const span=X[X.length-1];if(span<1.5)return null;
+  const mx=X.reduce(function(a,b){return a+b},0)/X.length,my=Y.reduce(function(a,b){return a+b},0)/Y.length;
+  let sxy=0,sxx=0;for(let i=0;i<X.length;i++){sxy+=(X[i]-mx)*(Y[i]-my);sxx+=(X[i]-mx)*(X[i]-mx)}
+  return {slope:sxx?sxy/sxx:0,n:P.length,weeks:span};
+}
+/* semanas até atingir target saindo de cur com slope/semana; dir=-1 quando precisa diminuir */
+function weeksTo(cur,target,slope){
+  const gap=target-cur;if(Math.abs(gap)<0.05)return 0;
+  if(Math.abs(slope)<0.02||Math.sign(slope)!==Math.sign(gap))return null;
+  return gap/slope;
+}
+function zoneDist(x,lo,hi){return x<lo?lo-x:x>hi?x-hi:0}
+function deltaState(prev,cur,lo,hi,dec){
+  const dc=zoneDist(cur,lo,hi),dp=zoneDist(prev,lo,hi);
+  if(dc===0&&dp===0)return 'ok';
+  if(+(cur-prev).toFixed(dec)===0)return 'flat';
+  return dc<dp?'better':dc>dp?'worse':'flat';
+}
+function progress(start,cur,target){
+  if(cur<=target)return 1;
+  if(start<=target)return 0;
+  return Math.min(1,Math.max(0,(start-cur)/(start-target)));
+}
+function niceTicks(min,max,n){
+  const span=(max-min)||1,raw=span/n,mag=Math.pow(10,Math.floor(Math.log10(raw))),nr=raw/mag;
+  const step=(nr<=1?1:nr<=2?2:nr<=5?5:10)*mag;
+  const lo=Math.floor(min/step+1e-9)*step,hi=Math.ceil(max/step-1e-9)*step;
+  const ticks=[];for(let v=lo;v<=hi+step*1e-6;v+=step)ticks.push(+v.toFixed(8));
+  return {ticks:ticks,lo:+lo.toFixed(8),hi:+hi.toFixed(8),step:step};
+}
+function nf(v,dec){if(dec==null)dec=1;return v.toLocaleString('pt-BR',{minimumFractionDigits:dec,maximumFractionDigits:dec})}
+function sgn(v,dec){if(dec==null)dec=1;const r=+v.toFixed(dec);if(r===0)return nf(0,dec);return (r>0?'+':'−')+nf(Math.abs(r),dec)}
+function parseD(s){const a=s.split('-').map(Number);return new Date(a[0],a[1]-1,a[2])}
+function isoD(dt){return dt.getFullYear()+'-'+String(dt.getMonth()+1).padStart(2,'0')+'-'+String(dt.getDate()).padStart(2,'0')}
+function dShort(s){const d=parseD(s);return d.getDate()+' '+MONTHS[d.getMonth()]}
+function dFull(s){const d=parseD(s);return d.getDate()+' '+MONTHS[d.getMonth()]+' '+d.getFullYear()}
+function dLong(s){const d=parseD(s);return WD[d.getDay()]+', '+dFull(s)}
+function barPath(x,w,y0,y1,r){
+  const h=Math.abs(y1-y0);if(h<0.5)return '';
+  r=Math.min(r,w/2,h);
+  if(y1<y0)return 'M'+x+','+y0+'V'+(y1+r)+'Q'+x+','+y1+' '+(x+r)+','+y1+'H'+(x+w-r)+'Q'+(x+w)+','+y1+' '+(x+w)+','+(y1+r)+'V'+y0+'Z';
+  return 'M'+x+','+y0+'V'+(y1-r)+'Q'+x+','+y1+' '+(x+r)+','+y1+'H'+(x+w-r)+'Q'+(x+w)+','+y1+' '+(x+w)+','+(y1-r)+'V'+y0+'Z';
+}
+/*ENDCALC*/
+
+const $=(s,el)=>(el||document).querySelector(s);
+const state={profile:{height:175,sex:'m',goal:null,saved:false},entries:[],loaded:false,range:'all',metric:'weight',fig:'side',kind:'local'};
+let backend=null;
+
+/* ---------- dados de exemplo (só aparecem enquanto não há medição real) ---------- */
+const EXAMPLE=(function(){
+  const w=[86.4,86.0,86.1,85.4,85.0,84.7,84.9,84.1,83.8,83.4];
+  const c=[95.0,94.5,94.0,93.6,93.2,92.6,92.4,91.8,91.3,90.9];
+  const q=[104.0,null,103.6,null,103.0,null,102.6,null,102.1,101.8];
+  return w.map(function(_,i){const d=new Date();d.setDate(d.getDate()-7*(9-i));return {date:isoD(d),weight:w[i],waist:c[i],hip:q[i]}});
+})();
+function view(){
+  if(!state.loaded)return {list:[],example:false};
+  if(state.entries.length)return {list:state.entries.slice().sort(function(a,b){return a.date<b.date?-1:1}),example:false};
+  return {list:EXAMPLE,example:true};
+}
+function series(L,p){return L.map(function(e){return {date:e.date,t:parseD(e.date).getTime(),weight:e.weight,waist:e.waist,hip:isFinite(e.hip)&&e.hip>0?e.hip:null,bmi:bmi(e.weight,p.height)}})}
+function metricCfg(p){
+  const wr=weightRange(p.height),wf=waistRef(p.height,p.sex);
+  return {
+    weight:{key:'weight',name:'Peso',unit:'kg',du:'kg',color:'var(--c-weight)',lo:wr.lo,hi:wr.hi},
+    waist:{key:'waist',name:'Cintura',unit:'cm',du:'cm',color:'var(--c-waist)',lo:0,hi:wf.target},
+    bmi:{key:'bmi',name:'IMC',unit:'kg/m²',du:'',color:'var(--c-bmi)',lo:BMI_LO,hi:BMI_HI}
+  };
+}
+const STW={ok:['good','✓','na meta'],better:['good','','melhor'],worse:['bad','','pior'],flat:['flat','','estável']};
+function deltaInfo(c,cur,prev){
+  const d=cur-prev,r=+d.toFixed(1),st=deltaState(prev,cur,c.lo,c.hi,1),s=STW[st];
+  return {d:d,r:r,st:st,cls:s[0],word:s[2],arrow:r>0?'▲':r<0?'▼':'–',txt:sgn(d,1)+(c.du?' '+c.du:'')};
+}
+
+/* ---------- renderização ---------- */
+function renderTiles(){
+  const el=$('#tiles'),V=view();
+  if(!state.loaded){el.innerHTML='<p class="sub">Carregando suas medições…</p>';return}
+  const p=state.profile,cfg=metricCfg(p),S=series(V.list,p),last=S[S.length-1],prev=S[S.length-2];
+  const wf=waistRef(p.height,p.sex),wr=weightRange(p.height),ws=waistStatus(last.waist,p.height,p.sex);
+  const wsCls={ok:'good',near:'warnc',warn:'warnc',high:'bad'}[ws.k],wsIc={ok:'✓',near:'!',warn:'!',high:'▲'}[ws.k];
+  const sub={
+    weight:'Faixa saudável: '+nf(wr.lo)+' a '+nf(wr.hi)+' kg'+(p.goal?' · meta '+nf(p.goal)+' kg':''),
+    waist:'<span class="chip '+wsCls+'"><span aria-hidden="true">'+wsIc+'</span>'+ws.t+'</span><br>Meta: até '+nf(wf.target)+' cm',
+    bmi:'<span class="chip '+({'Peso normal':'good'}[bmiClass(last.bmi)]||'warnc')+'">'+bmiClass(last.bmi)+'</span><br>Faixa normal: 18,5 a 24,9'
+  };
+  el.innerHTML=['weight','waist','bmi'].map(function(k){
+    const c=cfg[k],v=last[k];
+    let dl='<div class="delta flat">Primeira medição, sem comparação ainda.</div>';
+    if(prev){
+      const di=deltaInfo(c,v,prev[k]),gap=Math.round((last.t-prev.t)/864e5);
+      dl='<div class="delta '+di.cls+'"><span aria-hidden="true">'+di.arrow+'</span><b>'+di.txt+'</b><span>'+di.word+' · vs. '+dShort(prev.date)+(gap!==7?' ('+gap+' dias)':'')+'</span></div>';
+    }
+    return '<article class="tile" style="--c:'+c.color+'"><div class="tile-head"><span class="dot"></span>'+c.name+'</div>'+
+      '<div><span class="num">'+nf(v)+'</span><span class="unit">'+c.unit+'</span></div>'+dl+'<p class="tile-sub">'+sub[k]+'</p></article>';
+  }).join('');
+  $('#lastInfo').textContent='Última medição: '+dLong(last.date)+(V.example?' (exemplo)':'');
+}
+
+function lastHip(S){for(let i=S.length-1;i>=0;i--)if(S[i].hip)return S[i];return null}
+function renderGoals(){
+  const el=$('#goals');
+  if(!state.loaded){el.innerHTML='';return}
+  const p=state.profile,wr=weightRange(p.height),wf=waistRef(p.height,p.sex),V=view(),S=series(V.list,p),first=S[0],last=S[S.length-1];
+  const whtr=last.waist/p.height,sexTxt=p.sex==='f'?'mulheres':'homens';
+  const rows=[
+    ['Faixa de peso saudável',nf(wr.lo)+' a '+nf(wr.hi)+' kg','IMC de 18,5 a 24,9 para '+nf(p.height,0)+' cm.'],
+    ['Peso de referência (IMC 22)',nf(wr.ref)+' kg','Ponto central da faixa normal, só como parâmetro.'],
+    ['Cintura desejada','até '+nf(wf.target)+' cm','O menor entre '+wf.inc+' cm (limite IDF/OMS para '+sexTxt+') e metade da altura ('+nf(wf.half)+' cm).'],
+    ['Razão cintura/altura atual',nf(whtr,2),'Abaixo de 0,50 é o objetivo.']
+  ];
+  const lh=lastHip(S);
+  if(lh){const r=lh.waist/lh.hip,st=whrStatus(r,p.sex);rows.push(['Relação cintura/quadril','<span class="'+(st.k==='ok'?'good':'warnc')+'">'+nf(r,2)+'</span>',st.t+'. Limite OMS para '+sexTxt+': abaixo de '+nf(whrRef(p.sex),2)+'. Medida de '+dShort(lh.date)+'.'])}
+  else rows.push(['Relação cintura/quadril','—','Registre o quadril para calcular. Limite OMS para '+sexTxt+': abaixo de '+nf(whrRef(p.sex),2)+'.']);
+  const wTarget=p.goal||wr.hi,wProg=progress(first.weight,last.weight,wTarget),cProg=progress(first.waist,last.waist,wf.target);
+  const wRem=last.weight>wTarget?'Faltam '+nf(last.weight-wTarget)+' kg até '+nf(wTarget)+' kg':(last.weight<wr.lo?'Abaixo da faixa saudável':'Meta atingida');
+  const cRem=last.waist>wf.target?'Faltam '+nf(last.waist-wf.target)+' cm até '+nf(wf.target)+' cm':'Meta atingida';
+  el.innerHTML='<dl class="goals">'+rows.map(function(r){return '<div><dt>'+r[0]+'</dt><dd>'+r[1]+'</dd><dd class="why">'+r[2]+'</dd></div>'}).join('')+'</dl>'+
+    '<div class="prog" style="--c:var(--c-weight)"><div class="prog-top"><span>Peso desde '+dShort(first.date)+'</span><b>'+wRem+'</b></div><div class="bar"><i style="width:'+Math.round(wProg*100)+'%"></i></div></div>'+
+    '<div class="prog" style="--c:var(--c-waist)"><div class="prog-top"><span>Cintura desde '+dShort(first.date)+'</span><b>'+cRem+'</b></div><div class="bar"><i style="width:'+Math.round(cProg*100)+'%"></i></div></div>';
+}
+
+function pickIdx(n,plotW,minGap){
+  if(n<=1)return [0];
+  const maxLabels=Math.max(2,Math.floor(plotW/minGap)),step=Math.ceil(n/maxLabels),out=[];
+  for(let i=n-1;i>=0;i-=step)out.unshift(i);
+  return out;
+}
+function tipper(host,svg,W,xs,mk){
+  const tip=document.createElement('div');tip.className='tip';tip.hidden=true;host.appendChild(tip);
+  const xh=svg.querySelector('.xh'),xc=svg.querySelector('.xc');
+  function show(e){
+    const r=svg.getBoundingClientRect(),px=(e.clientX-r.left)*(W/r.width);
+    let bi=0,bd=1e9;xs.forEach(function(x,i){const d=Math.abs(x-px);if(d<bd){bd=d;bi=i}});
+    const info=mk(bi);
+    xh.setAttribute('x1',xs[bi]);xh.setAttribute('x2',xs[bi]);xh.style.display='';
+    if(info.y!=null){xc.setAttribute('cx',xs[bi]);xc.setAttribute('cy',info.y);xc.style.display=''}else xc.style.display='none';
+    tip.innerHTML=info.html;tip.hidden=false;
+    const s=r.width/W,tw=tip.offsetWidth;
+    tip.style.left=Math.min(Math.max(xs[bi]*s,tw/2+2),r.width-tw/2-2)+'px';
+  }
+  function hide(){tip.hidden=true;xh.style.display='none';xc.style.display='none'}
+  svg.addEventListener('pointermove',show);svg.addEventListener('pointerdown',show);
+  svg.addEventListener('pointerleave',hide);svg.addEventListener('pointercancel',hide);
+}
+
+function lineChart(host,o){
+  const pts=o.pts,W=Math.max(260,Math.round(host.clientWidth||320)),H=230,m={l:44,r:14,t:18,b:28};
+  host.innerHTML='';
+  if(!pts.length){host.innerHTML='<p class="empty">Sem medições neste período.</p>';return}
+  const iw=W-m.l-m.r,ih=H-m.t-m.b,vals=pts.map(function(p){return p.v});
+  let dmin=Math.min.apply(null,vals),dmax=Math.max.apply(null,vals);
+  if(o.target!=null){dmin=Math.min(dmin,o.target);dmax=Math.max(dmax,o.target)}
+  const pad=(dmax-dmin)*0.18||Math.max(1,dmax*0.02),nt=niceTicks(dmin-pad,dmax+pad,4),dec=nt.step>=1?0:nt.step>=0.1?1:2;
+  const y=function(v){return m.t+ih*(1-(v-nt.lo)/(nt.hi-nt.lo))};
+  const x0=m.l+10,x1=W-m.r-10,t0=pts[0].t,t1=pts[pts.length-1].t;
+  const x=function(t){return pts.length===1?m.l+iw/2:x0+(t-t0)/(t1-t0)*(x1-x0)};
+  const xs=pts.map(function(p){return x(p.t)});
+  let s='<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="transparent"/>';
+  if(o.band){const bl=Math.max(o.band[0],nt.lo),bh=Math.min(o.band[1],nt.hi);if(bh>bl)s+='<rect class="band" x="'+m.l+'" y="'+y(bh)+'" width="'+iw+'" height="'+(y(bl)-y(bh))+'"/>'}
+  nt.ticks.forEach(function(v){
+    s+='<line class="grid" x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+y(v)+'" y2="'+y(v)+'"/><text class="tk" x="'+(m.l-8)+'" y="'+(y(v)+4)+'">'+nf(v,dec)+'</text>';
+  });
+  s+='<line class="axis" x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+(H-m.b)+'" y2="'+(H-m.b)+'"/>';
+  if(o.target!=null)s+='<line class="tgt" x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+y(o.target)+'" y2="'+y(o.target)+'"/><text class="tgtl" x="'+(W-m.r)+'" y="'+(y(o.target)-5)+'">Meta '+nf(o.target,1)+'</text>';
+  pickIdx(pts.length,iw,64).forEach(function(i){s+='<text class="mid" x="'+xs[i]+'" y="'+(H-m.b+17)+'">'+dShort(pts[i].date)+'</text>'});
+  if(pts.length>1)s+='<path d="'+pts.map(function(p,i){return (i?'L':'M')+xs[i]+','+y(p.v)}).join('')+'" fill="none" stroke="'+o.color+'" stroke-width="2.25" stroke-linejoin="round" stroke-linecap="round"/>';
+  const li=pts.length-1;
+  pts.forEach(function(p,i){if(pts.length<=26||i===li)s+='<circle cx="'+xs[i]+'" cy="'+y(p.v)+'" r="'+(i===li?5:3.5)+'" fill="'+o.color+'" stroke="var(--surface)" stroke-width="2"/>'});
+  const ly=y(pts[li].v),lyy=ly-11<m.t+6?ly+20:ly-11;
+  s+='<text class="lab" text-anchor="end" x="'+Math.min(xs[li]+8,W-m.r)+'" y="'+lyy+'">'+nf(pts[li].v,1)+'</text>';
+  s+='<line class="xh" y1="'+m.t+'" y2="'+(H-m.b)+'" style="display:none"/><circle class="xc" r="6" stroke="'+o.color+'" style="display:none"/>';
+  host.innerHTML='<svg class="ch" role="img" aria-label="'+o.name+': de '+nf(pts[0].v)+' '+o.unit+' em '+dShort(pts[0].date)+' para '+nf(pts[li].v)+' '+o.unit+' em '+dShort(pts[li].date)+'" viewBox="0 0 '+W+' '+H+'">'+s+'</svg>';
+  tipper(host,host.firstChild,W,xs,function(i){
+    const p=pts[i];
+    return {y:y(p.v),html:'<b>'+dFull(p.date)+'</b><span>'+nf(p.v,1)+' '+o.unit+'</span>'+(p.d==null?'':'<small>'+sgn(p.d,1)+' vs. anterior</small>')};
+  });
+}
+
+function barChart(host,o){
+  const it=o.items,W=Math.max(260,Math.round(host.clientWidth||320)),H=230,m={l:44,r:14,t:22,b:28};
+  host.innerHTML='';
+  if(!it.length){host.innerHTML='<p class="empty">Registre ao menos 2 medições para ver a variação semanal.</p>';return}
+  const iw=W-m.l-m.r,ih=H-m.t-m.b,maxAbs=Math.max(Math.max.apply(null,it.map(function(i){return Math.abs(i.v)})),0.1);
+  const nt=niceTicks(-maxAbs*1.25,maxAbs*1.25,4),dec=nt.step>=1?0:1;
+  const y=function(v){return m.t+ih*(1-(v-nt.lo)/(nt.hi-nt.lo))},y0=y(0),band=iw/it.length,bw=Math.min(30,band*0.6);
+  const xs=it.map(function(_,i){return m.l+band*(i+0.5)});
+  let s='<rect x="0" y="0" width="'+W+'" height="'+H+'" fill="transparent"/>';
+  nt.ticks.forEach(function(v){
+    const z=Math.abs(v)<1e-9;
+    s+='<line class="'+(z?'axis':'grid')+'" x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+y(v)+'" y2="'+y(v)+'"/><text class="tk" x="'+(m.l-8)+'" y="'+(y(v)+4)+'">'+(z?'0':sgn(v,dec))+'</text>';
+  });
+  const showAll=it.length<=12;
+  it.forEach(function(b,i){
+    const bx=xs[i]-bw/2,by=y(b.v);
+    s+='<path d="'+barPath(bx,bw,y0,by,4)+'" fill="'+o.color+'"/>';
+    if(Math.abs(b.v)<0.05)s+='<rect x="'+bx+'" y="'+(y0-1)+'" width="'+bw+'" height="2" fill="'+o.color+'"/>';
+    if(showAll||i===it.length-1)s+='<text class="lab" text-anchor="middle" x="'+xs[i]+'" y="'+(b.v>=0?by-6:by+15)+'">'+sgn(b.v,o.dec)+'</text>';
+  });
+  pickIdx(it.length,iw,60).forEach(function(i){s+='<text class="mid" x="'+xs[i]+'" y="'+(H-m.b+17)+'">'+dShort(it[i].date)+'</text>'});
+  s+='<line class="xh" y1="'+m.t+'" y2="'+(H-m.b)+'" style="display:none"/><circle class="xc" r="0" style="display:none"/>';
+  host.innerHTML='<svg class="ch" role="img" aria-label="Variação semanal de '+o.name+'" viewBox="0 0 '+W+' '+H+'">'+s+'</svg>';
+  tipper(host,host.firstChild,W,xs,function(i){
+    const b=it[i];return {y:null,html:'<b>'+dFull(b.date)+'</b><span>'+sgn(b.v,o.dec)+(o.du?' '+o.du:'')+'</span><small>vs. '+dShort(b.prev)+'</small>'};
+  });
+}
+
+function renderCharts(){
+  if(!state.loaded)return;
+  const p=state.profile,cfg=metricCfg(p),wr=weightRange(p.height),wf=waistRef(p.height,p.sex),S=series(view().list,p);
+  const n=state.range==='all'?S.length:Math.min(S.length,+state.range),sel=S.slice(S.length-n),off=S.length-n;
+  const mk=function(k){return sel.map(function(s,i){const g=off+i;return {t:s.t,date:s.date,v:s[k],d:g>0?s[k]-S[g-1][k]:null}})};
+  const last=S[S.length-1];
+  lineChart($('#chW'),{pts:mk('weight'),color:cfg.weight.color,unit:'kg',name:'Peso',band:[wr.lo,wr.hi],target:p.goal||null});
+  lineChart($('#chC'),{pts:mk('waist'),color:cfg.waist.color,unit:'cm',name:'Cintura',band:null,target:wf.target});
+  lineChart($('#chB'),{pts:mk('bmi'),color:cfg.bmi.color,unit:'kg/m²',name:'IMC',band:[BMI_LO,BMI_HI],target:null});
+  $('#nowW').textContent=nf(last.weight)+' kg';$('#nowC').textContent=nf(last.waist)+' cm';$('#nowB').textContent=nf(last.bmi);
+  $('#lgW').innerHTML='<span><i class="sw band"></i>Faixa saudável '+nf(wr.lo)+' a '+nf(wr.hi)+' kg</span>'+(p.goal?'<span><i class="sw dash"></i>Sua meta</span>':'');
+  $('#lgC').innerHTML='<span><i class="sw dash"></i>Cintura desejada '+nf(wf.target)+' cm</span>';
+  $('#lgB').innerHTML='<span><i class="sw band"></i>Faixa normal 18,5 a 24,9</span>';
+  renderDelta(S);
+}
+function renderDelta(S){
+  if(!S){const p=state.profile;S=series(view().list,p)}
+  const c=metricCfg(state.profile)[state.metric],D=[];
+  for(let i=1;i<S.length;i++)D.push({date:S[i].date,prev:S[i-1].date,v:S[i][state.metric]-S[i-1][state.metric]});
+  const items=state.range==='all'?D:D.slice(-(+state.range));
+  barChart($('#chD'),{items:items,color:c.color,name:c.name,du:c.du,dec:1});
+}
+
+function renderCompare(){
+  const el=$('#cmp');
+  if(!state.loaded){el.innerHTML='';return}
+  const p=state.profile,cfg=metricCfg(p),S=series(view().list,p),last=S[S.length-1],prev=S[S.length-2];
+  if(!prev){el.innerHTML='<p class="empty">Registre mais uma medição para comparar com a anterior.</p>';return}
+  const rows=['weight','waist','bmi'].map(function(k){
+    const c=cfg[k],di=deltaInfo(c,last[k],prev[k]),pct=(last[k]-prev[k])/prev[k]*100;
+    return '<tr><td>'+c.name+'</td><td>'+nf(prev[k])+' '+c.unit+'</td><td>'+nf(last[k])+' '+c.unit+'</td><td class="'+di.cls+'"><span aria-hidden="true">'+di.arrow+'</span> <b>'+di.txt+'</b> ('+sgn(pct,1)+'%) · '+di.word+'</td></tr>';
+  }).join('');
+  el.innerHTML='<table class="cmp"><thead><tr><th>Medida</th><th>'+dShort(prev.date)+'</th><th>'+dShort(last.date)+'</th><th>Variação</th></tr></thead><tbody>'+rows+'</tbody></table>';
+}
+
+function renderHistory(){
+  const el=$('#hist'),V=view();
+  if(!state.loaded){el.innerHTML='';return}
+  const S=series(V.list,state.profile),rows=[];
+  for(let i=S.length-1;i>=0;i--){
+    const s=S[i],pv=S[i-1];
+    const dw=pv?'<td class="'+deltaInfo(metricCfg(state.profile).weight,s.weight,pv.weight).cls+'">'+sgn(s.weight-pv.weight,1)+'</td>':'<td>–</td>';
+    const dc=pv?'<td class="'+deltaInfo(metricCfg(state.profile).waist,s.waist,pv.waist).cls+'">'+sgn(s.waist-pv.waist,1)+'</td>':'<td>–</td>';
+    rows.push('<tr><td>'+dLong(s.date)+(V.example?'<span class="tag">exemplo</span>':'')+'</td><td>'+nf(s.weight)+'</td><td>'+nf(s.waist)+'</td><td>'+(s.hip?nf(s.hip):'–')+'</td><td>'+nf(s.bmi)+'</td><td>'+(s.hip?nf(s.waist/s.hip,2):'–')+'</td>'+dw+dc+
+      '<td>'+(V.example?'':'<div class="acts"><button class="btn ghost small" type="button" data-act="edit" data-d="'+s.date+'">Editar</button><button class="btn ghost small" type="button" data-act="del" data-d="'+s.date+'">Excluir</button></div>')+'</td></tr>');
+  }
+  el.innerHTML='<table class="hist"><thead><tr><th>Data</th><th>Peso (kg)</th><th>Cintura (cm)</th><th>Quadril (cm)</th><th>IMC</th><th>C/Q</th><th>Δ peso</th><th>Δ cintura</th><th></th></tr></thead><tbody>'+rows.join('')+'</tbody></table>';
+}
+
+function renderBmi(){
+  const sc=$('#bmiScale'),fa=$('#bmiFacts');
+  if(!state.loaded){sc.innerHTML='';fa.innerHTML='';return}
+  const p=state.profile,S=series(view().list,p),last=S[S.length-1],b=last.bmi,ci=bmiBandIdx(b),cz=BMI_BANDS[ci];
+  const MIN=15,MAX=44,pos=function(v){return (Math.min(Math.max(v,MIN),MAX)-MIN)/(MAX-MIN)*100};
+  const segs=BMI_BANDS.map(function(z){return (z.hi==null?MAX:z.hi)-(z.lo==null?MIN:z.lo)});
+  const pl=Math.min(Math.max(pos(b),6),94);
+  sc.innerHTML='<div class="pin" style="left:'+pos(b)+'%"><b>Você: '+nf(b,1)+'</b><i></i></div>'+
+    '<div class="scale-bar" role="img" aria-label="Escala de IMC da OMS; seu IMC '+nf(b,1)+' está na faixa '+cz.name+'">'+
+    BMI_BANDS.map(function(z,i){return '<span class="'+(i===ci?'cur':'')+'" style="--g:'+segs[i]+';--z:'+z.z+'"></span>'}).join('')+'</div>'+
+    '<div class="scale-ticks">'+[18.5,25,30,35,40].map(function(v){return '<span style="left:'+pos(v)+'%">'+nf(v,v%1?1:0)+'</span>'}).join('')+'</div>'+
+    '<div class="scale-names" aria-hidden="true">'+BMI_BANDS.map(function(z,i){return '<span class="'+(i===ci?'cur':'')+'" style="--g:'+segs[i]+'">'+z.short+'</span>'}).join('')+'</div>';
+  const pin=sc.querySelector('.pin'),pw=pin.offsetWidth,sw=sc.offsetWidth;
+  if(sw){const cx=pos(b)/100*sw,sh=Math.min(Math.max(cx,pw/2),sw-pw/2)-cx;pin.querySelector('b').style.transform='translateX('+sh+'px)'}
+  const wr=weightRange(p.height),k=kgToHealthy(last.weight,p.height),k22=last.weight-wr.ref;
+  const hTxt=k>0?'Perder '+nf(k)+' kg':k<0?'Ganhar '+nf(-k)+' kg':'Você já está na faixa';
+  const hSub=k>0?'De '+nf(last.weight)+' kg até '+nf(wr.hi)+' kg, o limite de cima da faixa saudável para '+nf(p.height,0)+' cm.':
+    k<0?'De '+nf(last.weight)+' kg até '+nf(wr.lo)+' kg, o limite de baixo da faixa saudável para '+nf(p.height,0)+' cm.':
+    'Faixa saudável para '+nf(p.height,0)+' cm: '+nf(wr.lo)+' a '+nf(wr.hi)+' kg.';
+  const rTxt=Math.abs(k22)<0.05?'Você está no IMC 22':(k22>0?'Perder ':'Ganhar ')+nf(Math.abs(k22))+' kg';
+  fa.innerHTML=
+    '<div><dt>Faixa em que você está</dt><dd>'+cz.name+'<small>IMC '+nf(b,1)+' · essa faixa vai de '+bandRangeTxt(cz)+'</small></dd></div>'+
+    '<div><dt>IMC recomendado</dt><dd>18,5 a 24,9<small>Faixa normal da OMS para adultos. Ponto central de referência: IMC 22 ('+nf(wr.ref)+' kg).</small></dd></div>'+
+    '<div><dt>Para chegar na faixa saudável</dt><dd class="'+(k>0?'':k<0?'':'good')+'">'+hTxt+'<small>'+hSub+'</small></dd></div>'+
+    '<div><dt>Para chegar ao IMC 22</dt><dd>'+rTxt+'<small>Opcional. Qualquer valor entre 18,5 e 24,9 já é considerado saudável.</small></dd></div>';
+}
+function renderAll(){
+  renderBmi();
+  $('#banner').hidden=!(state.loaded&&view().example);
+  if(state.loaded)renderTiles();else{$('#tiles').innerHTML='<p class="sub">Carregando suas medições…</p>'}
+  renderGoals();renderForecast();renderBody();renderCharts();renderCompare();renderHistory();
+  document.querySelectorAll('#figSeg button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.f===state.fig))});
+  document.querySelectorAll('#rangeSeg button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.r===String(state.range)))});
+  document.querySelectorAll('#metricSeg button').forEach(function(b){b.setAttribute('aria-pressed',String(b.dataset.m===state.metric))});
+  const pm=$('#pMsg');
+  if(!state.profile.saved&&pm&&!pm.classList.contains('okm')&&!pm.classList.contains('err'))pm.textContent='Usando altura '+state.profile.height+' cm e sexo '+(state.profile.sex==='f'?'feminino':'masculino')+' como padrão. Confirme e salve para os cálculos ficarem corretos.';
+}
+function syncProfileInputs(){
+  const p=state.profile;
+  if(document.activeElement!==$('#pH'))$('#pH').value=p.height;
+  if(document.activeElement!==$('#pS'))$('#pS').value=p.sex;
+  if(document.activeElement!==$('#pG'))$('#pG').value=p.goal||'';
+}
+
+/* ---------- armazenamento: db do artefato (por usuário) ou localStorage ---------- */
+function validEntry(e){return e&&typeof e.date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(e.date)&&isFinite(e.weight)&&isFinite(e.waist)&&(e.hip==null||isFinite(e.hip))}
+function cleanEntry(e){const o={date:e.date,weight:+e.weight,waist:+e.waist};if(e.hip!=null&&+e.hip>0)o.hip=+e.hip;return o}
+const LS={get:function(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set:function(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+function applyProfile(d){
+  if(d&&isFinite(d.height))state.profile={height:d.height,sex:d.sex==='f'?'f':'m',goal:isFinite(d.goal)&&d.goal>0?d.goal:null,saved:true};
+  else state.profile=Object.assign({},state.profile,{saved:false});
+  syncProfileInputs();
+}
+function initStore(){
+  applyProfile(LS.get('pc.profile',null));
+  state.entries=LS.get('pc.entries',[]).filter(validEntry);state.loaded=true;
+  const save=function(){LS.set('pc.entries',state.entries)};
+  backend={
+    saveEntry:async function(e){state.entries=state.entries.filter(function(x){return x.date!==e.date}).concat([cleanEntry(e)]);save();renderAll();autoBackup()},
+    delEntry:async function(d){state.entries=state.entries.filter(function(x){return x.date!==d});save();renderAll();autoBackup()},
+    saveProfile:async function(p){LS.set('pc.profile',p);applyProfile(p);renderAll();autoBackup()}
+  };
+  renderAll();
+  if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(function(){});
+  renderAutoMsg();initReminder();
+}
+function errText(e){return e&&e.code==='invalid_argument'?'Sem permissão para salvar nesta página.':e&&e.code==='quota_exceeded'?'Limite de armazenamento atingido.':'Não foi possível salvar agora. Tente de novo.'}
+function setMsg(el,t,k){el.textContent=t;el.className='msg'+(k?' '+k:'')}
+
+/* ---------- eventos ---------- */
+const today=isoD(new Date());
+$('#fDate').value=today;$('#fDate').max=today;
+$('#entryForm').addEventListener('submit',async function(ev){
+  ev.preventDefault();
+  const d=$('#fDate').value,w=parseFloat($('#fW').value),c=parseFloat($('#fC').value),qv=$('#fQ').value.trim(),q=parseFloat(qv),msg=$('#fMsg');
+  if(!d){setMsg(msg,'Escolha a data.','err');return}
+  if(d>today){setMsg(msg,'A data não pode ser futura.','err');return}
+  if(!(w>=25&&w<=400)){setMsg(msg,'Informe um peso entre 25 e 400 kg.','err');return}
+  if(!(c>=40&&c<=250)){setMsg(msg,'Informe uma cintura entre 40 e 250 cm.','err');return}
+  if(qv!==''&&!(q>=50&&q<=250)){setMsg(msg,'Informe um quadril entre 50 e 250 cm, ou deixe em branco.','err');return}
+  if(!backend){setMsg(msg,'Aguarde o carregamento e tente de novo.','err');return}
+  $('#fBtn').disabled=true;
+  try{const en={date:d,weight:Math.round(w*10)/10,waist:Math.round(c*10)/10};if(qv!=='')en.hip=Math.round(q*10)/10;await backend.saveEntry(en);setMsg(msg,'Medição de '+dShort(d)+' salva.','okm');$('#fW').value='';$('#fC').value='';$('#fQ').value=''}
+  catch(e){setMsg(msg,errText(e),'err')}
+  $('#fBtn').disabled=false;
+});
+$('#profForm').addEventListener('submit',async function(ev){
+  ev.preventDefault();
+  const h=parseFloat($('#pH').value),g=parseFloat($('#pG').value),s=$('#pS').value==='f'?'f':'m',msg=$('#pMsg');
+  if(!(h>=120&&h<=230)){setMsg(msg,'Informe uma altura entre 120 e 230 cm.','err');return}
+  if($('#pG').value!==''&&!(g>=25&&g<=400)){setMsg(msg,'A meta de peso deve ficar entre 25 e 400 kg.','err');return}
+  if(!backend){setMsg(msg,'Aguarde o carregamento e tente de novo.','err');return}
+  $('#pBtn').disabled=true;
+  try{await backend.saveProfile({height:Math.round(h),sex:s,goal:$('#pG').value===''?null:Math.round(g*10)/10});setMsg(msg,'Dados salvos.','okm')}
+  catch(e){setMsg(msg,errText(e),'err')}
+  $('#pBtn').disabled=false;
+});
+$('#goForm').addEventListener('click',function(){$('#formCard').scrollIntoView({behavior:'smooth',block:'start'});$('#fW').focus({preventScroll:true})});
+$('#rangeSeg').addEventListener('click',function(ev){const b=ev.target.closest('button');if(!b)return;state.range=b.dataset.r;renderAll()});
+$('#metricSeg').addEventListener('click',function(ev){const b=ev.target.closest('button');if(!b)return;state.metric=b.dataset.m;renderAll()});
+$('#hist').addEventListener('click',async function(ev){
+  const b=ev.target.closest('button[data-act]');if(!b)return;
+  const d=b.dataset.d;
+  if(b.dataset.act==='edit'){
+    const e=state.entries.find(function(x){return x.date===d});if(!e)return;
+    $('#fDate').value=d;$('#fW').value=e.weight;$('#fC').value=e.waist;$('#fQ').value=e.hip||'';setMsg($('#fMsg'),'Editando '+dShort(d)+'. Salve para substituir.','');
+    $('#formCard').scrollIntoView({behavior:'smooth',block:'start'});return;
+  }
+  if(!b.dataset.armed){
+    b.dataset.armed='1';b.textContent='Confirmar?';
+    setTimeout(function(){if(b.isConnected){delete b.dataset.armed;b.textContent='Excluir'}},3500);return;
+  }
+  try{await backend.delEntry(d)}catch(e){setMsg($('#fMsg'),errText(e),'err')}
+});
+let lastW=0,raf=0;
+new ResizeObserver(function(es){
+  const w=Math.round(es[0].contentRect.width);
+  if(w===lastW)return;lastW=w;cancelAnimationFrame(raf);raf=requestAnimationFrame(renderCharts);
+}).observe($('.wrap'));
+
+/* ---------- backup ---------- */
+$('#bImp').addEventListener('change',function(ev){
+  const f=ev.target.files&&ev.target.files[0],msg=$('#bMsg');if(!f)return;
+  const r=new FileReader();
+  r.onload=function(){
+    try{
+      const d=JSON.parse(r.result),list=(d&&Array.isArray(d.entries)?d.entries:[]).filter(validEntry);
+      if(!list.length){setMsg(msg,'O arquivo não tem medições válidas. Confira se é um backup deste app.','err');return}
+      const map={};state.entries.forEach(function(e){map[e.date]=e});list.forEach(function(e){map[e.date]=cleanEntry(e)});
+      state.entries=Object.keys(map).sort().map(function(k){return map[k]});LS.set('pc.entries',state.entries);
+      if(d.profile&&isFinite(d.profile.height)){LS.set('pc.profile',d.profile);applyProfile(d.profile)}
+      renderAll();autoBackup();setMsg(msg,list.length+' medições importadas.','okm');
+    }catch(e){setMsg(msg,'Não consegui ler o arquivo. Escolha o .json exportado por este app.','err')}
+    ev.target.value='';
+  };
+  r.readAsText(f);
+});
+/* ---------- integração Android (Capacitor) ---------- */
+const CX=window.capacitorExports,NATIVE=!!(CX&&CX.Capacitor&&CX.Capacitor.isNativePlatform());
+const FS=NATIVE&&window.capacitorFilesystemPluginCapacitor?capacitorFilesystemPluginCapacitor.Filesystem:null;
+const SHARE=NATIVE&&window.capacitorShare?capacitorShare.Share:null;
+const LN=NATIVE&&window.capacitorLocalNotifications?capacitorLocalNotifications.LocalNotifications:null;
+
+function backupData(){
+  return {app:'peso-e-cintura',version:2,exportedAt:new Date().toISOString(),
+    profile:state.profile.saved?{height:state.profile.height,sex:state.profile.sex,goal:state.profile.goal}:null,
+    entries:state.entries.slice().sort(function(a,b){return a.date<b.date?-1:1}).map(cleanEntry)};
+}
+function csvText(){
+  const p=state.profile,n=function(v,d){return v==null?'':v.toFixed(d).replace('.',',')};
+  const rows=['data;peso_kg;cintura_cm;quadril_cm;imc;cintura_quadril;cintura_altura'];
+  backupData().entries.forEach(function(e){
+    rows.push([e.date,n(e.weight,1),n(e.waist,1),n(e.hip,1),n(bmi(e.weight,p.height),2),e.hip?n(e.waist/e.hip,3):'',n(e.waist/p.height,3)].join(';'));
+  });
+  return '﻿'+rows.join('\r\n')+'\r\n';
+}
+function nowStamp(){const d=new Date();return dShort(isoD(d))+' às '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')}
+
+/* backup automático: grava a cada mudança em Documentos/PesoECintura */
+let abTimer=0;
+function autoBackup(){
+  if(!FS)return;clearTimeout(abTimer);
+  abTimer=setTimeout(async function(){
+    const data=JSON.stringify(backupData(),null,2);
+    try{
+      await FS.writeFile({path:'PesoECintura/peso-e-cintura-backup.json',data:data,directory:'DOCUMENTS',encoding:'utf8',recursive:true});
+      LS.set('pc.autobackup',{at:Date.now(),where:'docs'});
+    }catch(e){
+      try{await FS.writeFile({path:'peso-e-cintura-backup.json',data:data,directory:'DATA',encoding:'utf8',recursive:true});LS.set('pc.autobackup',{at:Date.now(),where:'data',err:String(e&&e.message||e)})}
+      catch(e2){LS.set('pc.autobackup',{at:Date.now(),where:'fail',err:String(e2&&e2.message||e2)})}
+    }
+    renderAutoMsg();
+  },400);
+}
+function renderAutoMsg(){
+  const el=$('#autoMsg');if(!el)return;
+  if(!NATIVE){el.textContent='O backup automático funciona no app instalado no Android.';el.className='msg';return}
+  const a=LS.get('pc.autobackup',null);
+  if(!a){el.textContent='Backup automático ativo. A primeira cópia é gravada no próximo registro.';el.className='msg';return}
+  const d=new Date(a.at),when=dShort(isoD(d))+' às '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0');
+  if(a.where==='docs'){el.textContent='✓ Último backup automático: '+when+', em Documentos/PesoECintura.';el.className='msg okm'}
+  else if(a.where==='data'){el.textContent='Último backup automático: '+when+', dentro do app (não deu para gravar em Documentos). Use "Exportar backup" para ter uma cópia fora do app.';el.className='msg'}
+  else{el.textContent='O backup automático falhou. Use "Exportar backup".';el.className='msg err'}
+}
+
+/* exportar: no app usa a folha de compartilhar do Android; no navegador baixa o arquivo */
+async function exportFile(name,text,mime,label){
+  const msg=$('#bMsg');
+  if(!state.entries.length){setMsg(msg,'Nenhuma medição para exportar ainda.','err');return}
+  if(FS&&SHARE){
+    try{
+      const r=await FS.writeFile({path:name,data:text,directory:'CACHE',encoding:'utf8'});
+      await SHARE.share({title:label,files:[r.uri],dialogTitle:label});
+      setMsg(msg,label+' pronto.','okm');
+    }catch(e){if(!/cancel/i.test(String(e&&e.message||e)))setMsg(msg,'Não deu para exportar: '+(e&&e.message||e),'err')}
+    return;
+  }
+  const blob=new Blob([text],{type:mime}),url=URL.createObjectURL(blob),a=document.createElement('a');
+  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},4000);
+  setMsg(msg,label+' baixado.','okm');
+}
+$('#bExp').addEventListener('click',function(){exportFile('peso-e-cintura-backup-'+isoD(new Date())+'.json',JSON.stringify(backupData(),null,2),'application/json','Backup')});
+$('#bCsv').addEventListener('click',function(){exportFile('peso-e-cintura-'+isoD(new Date())+'.csv',csvText(),'text/csv','Planilha')});
+
+/* ---------- lembrete semanal ---------- */
+const DAYN={1:'domingo',2:'segunda',3:'terça',4:'quarta',5:'quinta',6:'sexta',7:'sábado'};
+function remState(){return LS.get('pc.reminder',{on:false,day:2,time:'08:00'})}
+function renderReminder(){
+  const r=remState();
+  $('#remWeb').hidden=!!LN;$('#remNative').hidden=!LN;
+  if(!LN)return;
+  $('#rDay').value=String(r.day);$('#rTime').value=r.time;
+  $('#rBtn').textContent=r.on?'Desativar lembrete':'Ativar lembrete';
+  $('#rBtn').className=r.on?'btn ghost':'btn';
+  const m=$('#rMsg');
+  if(r.on){m.textContent='✓ Ativo: toda '+DAYN[r.day]+' às '+r.time+'.';m.className='msg okm'}
+  else if(!m.classList.contains('err')){m.textContent='Escolha o dia e o horário e toque em Ativar.';m.className='msg'}
+}
+async function scheduleReminder(r){
+  await LN.cancel({notifications:[{id:1}]}).catch(function(){});
+  const hm=r.time.split(':').map(Number);
+  await LN.schedule({notifications:[{id:1,title:'Hora de medir',body:'Registre seu peso e sua cintura desta semana.',
+    schedule:{on:{weekday:r.day,hour:hm[0],minute:hm[1]},allowWhileIdle:true},smallIcon:'ic_stat_notify',iconColor:'#2a78d6'}]});
+}
+async function initReminder(){
+  renderReminder();if(!LN)return;
+  const r=remState();
+  if(r.on){try{const p=await LN.checkPermissions();if(p.display==='granted')await scheduleReminder(r)}catch(e){}}
+  try{LN.addListener('localNotificationActionPerformed',function(){setTimeout(function(){$('#formCard').scrollIntoView({block:'start'});$('#fW').focus({preventScroll:true})},300)})}catch(e){}
+}
+async function setReminder(on){
+  const m=$('#rMsg'),r={on:on,day:+$('#rDay').value,time:$('#rTime').value||'08:00'};
+  try{
+    if(on){
+      let p=await LN.checkPermissions();
+      if(p.display!=='granted')p=await LN.requestPermissions();
+      if(p.display!=='granted'){setMsg(m,'Sem permissão para notificações. Libere em Configurações → Apps → Peso e Cintura → Notificações e tente de novo.','err');return}
+      await scheduleReminder(r);
+    }else await LN.cancel({notifications:[{id:1}]});
+    LS.set('pc.reminder',r);m.className='msg';renderReminder();
+  }catch(e){setMsg(m,'Não consegui agendar: '+(e&&e.message||e),'err')}
+}
+if(LN){
+  $('#rBtn').addEventListener('click',function(){setReminder(!remState().on)});
+  ['rDay','rTime'].forEach(function(id){$('#'+id).addEventListener('change',function(){if(remState().on)setReminder(true)})});
+}
+
+/* ---------- previsão da meta ---------- */
+function fmtWeeks(w){
+  if(w<=1)return 'em cerca de 1 semana';
+  if(w<9)return 'em cerca de '+Math.round(w)+' semanas';
+  if(w<104)return 'em cerca de '+Math.round(w/4.345)+' meses';
+  return 'em mais de 2 anos';
+}
+function etaDate(lastT,w){const d=new Date(lastT+w*7*864e5);return MONTHS[d.getMonth()]+' de '+d.getFullYear()}
+function renderForecast(){
+  const el=$('#fcast');if(!state.loaded){el.innerHTML='';return}
+  const p=state.profile,S=series(view().list,p),last=S[S.length-1],wr=weightRange(p.height),wf=waistRef(p.height,p.sex);
+  const wTarget=p.goal||(last.weight>wr.hi?wr.hi:last.weight<wr.lo?wr.lo:null);
+  const items=[
+    {name:'Peso',c:'var(--c-weight)',u:'kg',cur:last.weight,target:wTarget,tLabel:p.goal?'à sua meta de '+nf(p.goal)+' kg':(wTarget?'à faixa saudável ('+nf(wTarget)+' kg)':null),tr:trend(S.map(function(s){return {t:s.t,v:s.weight}}))},
+    {name:'Cintura',c:'var(--c-waist)',u:'cm',cur:last.waist,target:last.waist>wf.target?wf.target:null,tLabel:'à cintura desejada ('+nf(wf.target)+' cm)',tr:trend(S.map(function(s){return {t:s.t,v:s.waist}}))}
+  ];
+  el.innerHTML=items.map(function(it){
+    let big,sub;
+    const rate=it.tr?(sgn(it.tr.slope,2)+' '+it.u+' por semana nas últimas '+it.tr.n+' medições'):null;
+    if(it.target==null){big=it.name==='Peso'?'Na faixa saudável':'Na cintura desejada';sub=rate?'Ritmo: '+rate+'.':'Continue registrando para acompanhar.'}
+    else if(!it.tr){big='Dados insuficientes';sub='A previsão aparece com pelo menos 3 medições cobrindo 2 semanas ou mais.'}
+    else{
+      const w=weeksTo(it.cur,it.target,it.tr.slope);
+      if(w===0){big='Meta atingida';sub='Ritmo: '+rate+'.'}
+      else if(w==null){big='No ritmo atual, não chega';sub='Ritmo: '+rate+'. Para chegar '+it.tLabel+', a tendência precisa ser de '+(it.target<it.cur?'queda':'alta')+'.'}
+      else{big=fmtWeeks(w)+' · '+etaDate(last.t,w);sub='Para chegar '+it.tLabel+'. Ritmo: '+rate+'. Faltam '+nf(Math.abs(it.target-it.cur))+' '+it.u+'.'}
+    }
+    return '<div class="fc-row"><span class="dot" style="--c:'+it.c+'"></span><div><h3>'+it.name+'</h3><span class="big">'+big+'</span><p>'+sub+'</p></div></div>';
+  }).join('');
+}
+
+/* ---------- modelo do corpo 2D ---------- */
+/* larguras frontais (cm) a partir de altura, peso e circunferências; seção do tronco como elipse */
+function ellW(C,r){return 2*C/(Math.PI*(1+1/r))}
+function bodyShape(h,sex,kg,waist,hip){
+  const b=bmi(kg,h),f=sex==='f',cl=function(x,a,z){return Math.max(a,Math.min(z,x))};
+  const wr=cl(1.45-(b-22)*0.025,1.12,1.45);
+  const chestC=0.5*waist+0.27*h+(f?8:3);
+  const neckC=f?0.33*b+25:0.37*b+29, armC=(f?0.9*b+5:0.95*b+6), thighC=hip*0.58;
+  return {
+    h:h,
+    head:{w:0.088*h,hh:0.13*h},
+    neck:ellW(neckC,1.1),
+    shoulder:(f?0.226:0.245)*h+cl(b-22,-4,20)*0.35,
+    chest:ellW(chestC,1.4),
+    waist:ellW(waist,wr),
+    hip:ellW(hip,1.4),
+    thigh:thighC/Math.PI,
+    knee:(34+(b-22)*0.45)/Math.PI,
+    calf:((f?0.35*b+27:0.35*b+28))/Math.PI,
+    ankle:(22+(b-22)*0.2)/Math.PI,
+    arm:armC/Math.PI, fore:armC*0.86/Math.PI, wrist:(16+(b-22)*0.15)/Math.PI
+  };
+}
+function smooth(pts){ /* Catmull-Rom -> Bézier, pontos [[x,y],...] */
+  let d='M'+pts[0][0].toFixed(2)+','+pts[0][1].toFixed(2);
+  for(let i=0;i<pts.length-1;i++){
+    const p0=pts[i-1]||pts[i],p1=pts[i],p2=pts[i+1],p3=pts[i+2]||p2;
+    const c1=[p1[0]+(p2[0]-p0[0])/6,p1[1]+(p2[1]-p0[1])/6],c2=[p2[0]-(p3[0]-p1[0])/6,p2[1]-(p3[1]-p1[1])/6];
+    d+='C'+c1[0].toFixed(2)+','+c1[1].toFixed(2)+' '+c2[0].toFixed(2)+','+c2[1].toFixed(2)+' '+p2[0].toFixed(2)+','+p2[1].toFixed(2);
+  }
+  return d;
+}
+function bodyGeom(B){
+  const h=B.h,Y=function(f){return f*h};
+  const hw=Math.max(B.hip,B.waist*0.98)/2;
+  const legOut0=hw*0.97, legIn0=Math.max(0.4,legOut0-B.thigh), ax0=(legOut0+legIn0)/2, axA=Math.max(0.05*h,ax0*0.55);
+  const ax=function(t){return ax0+(axA-ax0)*t};
+  const right=[
+    [B.neck/2,Y(0.150)],[B.shoulder*0.36,Y(0.168)],[B.shoulder/2,Y(0.192)],
+    [Math.max(B.chest/2,B.shoulder/2*0.86),Y(0.255)],[B.chest/2,Y(0.30)],
+    [(B.chest/2+B.waist/2)/2,Y(0.35)],[B.waist/2,Y(0.40)],[(B.waist/2+hw)/2+0.4,Y(0.445)],[hw,Y(0.49)],[legOut0,Y(0.53)],
+    [ax(0.35)+B.thigh*0.42,Y(0.62)],[ax(0.7)+B.knee/2,Y(0.715)],[ax(0.8)+B.calf/2,Y(0.80)],[ax(0.97)+B.ankle/2,Y(0.95)],[ax(1)+B.ankle/2+0.022*h,Y(0.995)]
+  ];
+  const inner=[
+    [ax(1)-B.ankle/2-0.004*h,Y(0.995)],[ax(0.97)-B.ankle/2,Y(0.95)],[ax(0.8)-B.calf/2*0.92,Y(0.80)],[ax(0.7)-B.knee/2,Y(0.715)],
+    [Math.max(0.3,ax(0.35)-B.thigh*0.46),Y(0.62)],[Math.max(0.2,legIn0),Y(0.535)]
+  ];
+  /* braço: eixo afastado do tronco o suficiente para não encostar */
+  const sx=B.shoulder/2-B.arm*0.32,sy=Y(0.205);
+  const ex=Math.max(sx+0.01*h,(B.chest/2+B.waist/2)/2+B.fore/2+1.2),ey=Y(0.375);
+  const wx=Math.max(ex+0.004*h,Math.max(B.waist/2,hw)+B.wrist/2+1.6),wy=Y(0.485);
+  const hx=wx+0.004*h,hy=Y(0.565);
+  const armOut=[[B.shoulder/2,Y(0.192)],[sx+B.arm/2+0.2,Y(0.235)],[ex+B.fore/2+0.3,ey],[wx+B.wrist/2,wy],[hx+B.wrist/2+0.6,Y(0.53)],[hx,hy]];
+  const armIn=[[hx-B.wrist/2-0.4,Y(0.53)],[wx-B.wrist/2,wy],[ex-B.fore/2,ey],[sx-B.arm/2+0.4,Y(0.262)]];
+  return {right:right,inner:inner,armOut:armOut,armIn:armIn,headW:B.head.w,headH:B.head.hh,neckW:B.neck,
+    span:Math.max(hx+B.wrist/2+1.2,right[2][0])};
+}
+function bodyPaths(B,cx,s,top){
+  const G=bodyGeom(B),X=function(x){return cx+x*s},Yp=function(y){return top+y*s},M=function(x){return cx-x*s};
+  const R=G.right.map(function(p){return [X(p[0]),Yp(p[1])]}),I=G.inner.map(function(p){return [X(p[0]),Yp(p[1])]});
+  /* contorno fechado: lado direito descendo, perna direita voltando à virilha, depois o espelho do lado esquerdo */
+  const half=R.concat(I);
+  const left=half.slice().reverse().map(function(p){return [2*cx-p[0],p[1]]});
+  const body=smooth(half.concat(left))+'Z';
+  const arm=function(sign){
+    const pts=G.armOut.concat(G.armIn).map(function(p){return [cx+sign*p[0]*s,Yp(p[1])]});
+    return smooth(pts.concat([pts[0]]))+'Z';
+  };
+  const hw=G.headW*s,hh=G.headH*s;
+  return {body:body,armR:arm(1),armL:arm(-1),
+    head:'<ellipse cx="'+cx.toFixed(2)+'" cy="'+(top+hh*0.5).toFixed(2)+'" rx="'+(hw/2).toFixed(2)+'" ry="'+(hh*0.53).toFixed(2)+'"/>',
+    neck:'<rect x="'+(cx-G.neckW*s/2).toFixed(2)+'" y="'+(top+hh*0.85).toFixed(2)+'" width="'+(G.neckW*s).toFixed(2)+'" height="'+(0.06*B.h*s).toFixed(2)+'" rx="2"/>',
+    span:G.span};
+}
+let figSeq=0;
+function figureSVG(list,W,H,label){
+  /* list: [{B,color,opacity}] todas na mesma escala */
+  const h=list[0].B.h,s=(H-8)/h,cx=W/2;
+  let defs='';
+  const g=list.map(function(it,i){
+    const P=bodyPaths(it.B,cx,s,4),shapes=P.head+P.neck+'<path d="'+P.armR+'"/><path d="'+P.armL+'"/><path d="'+P.body+'"/>';
+    if(!it.outline)return '<g fill="'+it.color+'" opacity="'+(it.opacity||1)+'">'+shapes+'</g>';
+    /* contorno pela borda de dentro: silhueta inteira menos a silhueta encolhida (máscara) */
+    const id='fm'+(++figSeq);
+    defs+='<filter id="'+id+'e" x="-5%" y="-5%" width="110%" height="110%"><feMorphology operator="erode" radius="'+it.outline+'"/></filter>'+
+      '<mask id="'+id+'" maskUnits="userSpaceOnUse" x="0" y="0" width="'+W.toFixed(1)+'" height="'+H+'"><g fill="#fff">'+shapes+'</g><g fill="#000" filter="url(#'+id+'e)">'+shapes+'</g></mask>';
+    return '<rect x="0" y="0" width="'+W.toFixed(1)+'" height="'+H+'" fill="'+it.color+'" mask="url(#'+id+')"/>';
+  }).join('');
+  return '<svg viewBox="0 0 '+W.toFixed(1)+' '+H+'" role="img" aria-label="'+label+'">'+(defs?'<defs>'+defs+'</defs>':'')+g+'</svg>';
+}
+function bodyStates(){
+  const p=state.profile,S=series(view().list,p),last=S[S.length-1],wr=weightRange(p.height),wf=waistRef(p.height,p.sex);
+  const lh=lastHip(S),hipEst=!(last.hip),hipNow=last.hip||(lh?lh.hip+(last.waist-lh.waist)*0.55:last.waist/(p.sex==='f'?0.82:0.95));
+  const hipFor=function(w){return Math.max(hipNow-0.55*(last.waist-w),w/(p.sex==='f'?0.80:0.93))};
+  const gW=p.goal||(last.weight>wr.hi?wr.hi:last.weight<wr.lo?wr.lo:last.weight);
+  const gC=Math.min(last.waist,wf.target);
+  const iW=wr.ref,iC=Math.min(0.45*p.height,wf.target);
+  return [
+    {k:'now',name:'Atual',color:'var(--fig-now)',kg:last.weight,waist:last.waist,hip:hipNow,hipEst:hipEst&&!lh,date:last.date},
+    {k:'goal',name:'Meta',color:'var(--fig-goal)',kg:gW,waist:gC,hip:hipFor(gC),hipEst:true},
+    {k:'ideal',name:'Ideal',color:'var(--fig-ideal)',kg:iW,waist:iC,hip:hipFor(iC),hipEst:true}
+  ];
+}
+function renderBody(){
+  const el=$('#bodyFigs');if(!state.loaded){el.innerHTML='';return}
+  const p=state.profile,st=bodyStates();
+  st.forEach(function(x){x.B=bodyShape(p.height,p.sex,x.kg,x.waist,x.hip)});
+  const span=Math.max.apply(null,st.map(function(x){return bodyGeom(x.B).span})),H=300,s=(H-8)/p.height,W=2*span*s+10;
+  const cap=function(x){return '<div class="fig-cap"><b><span class="dot" style="--c:'+x.color+'"></span>'+x.name+'</b>'+
+    '<span>'+nf(x.kg)+' kg · IMC '+nf(bmi(x.kg,p.height),1)+'</span><span>Cintura '+nf(x.waist,0)+' cm</span>'+
+    '<span>Quadril '+nf(x.hip,0)+' cm'+(x.hipEst?' <i>(est.)</i>':'')+'</span></div>'};
+  el.className='body-figs'+(state.fig==='over'?' over':'');
+  if(state.fig==='over'){
+    el.innerHTML='<div class="fig">'+figureSVG([{B:st[0].B,color:st[0].color,opacity:0.5},{B:st[1].B,color:st[1].color,outline:1.3},{B:st[2].B,color:st[2].color,outline:1.3}],W,H,'Silhueta atual preenchida, com os contornos da meta e do ideal por cima')+
+      '<div class="fig-legend">'+st.map(function(x){return '<span><span class="dot" style="--c:'+x.color+'"></span>'+x.name+(x.k==='now'?' (preenchido)':' (contorno)')+' · '+nf(x.kg)+' kg · cintura '+nf(x.waist,0)+' cm</span>'}).join('')+'</div></div>';
+  }else{
+    el.innerHTML=st.map(function(x){return '<div class="fig">'+figureSVG([{B:x.B,color:x.color}],W,H,'Silhueta '+x.name+': '+nf(x.kg)+' kg, cintura '+nf(x.waist,0)+' cm')+cap(x)+'</div>'}).join('');
+  }
+  const wr=weightRange(p.height);
+  $('#bodyNote').innerHTML='Ilustração aproximada, na mesma escala, feita a partir da sua altura, peso e medidas. Não é uma foto nem uma avaliação corporal. '+
+    '<b>Meta</b>: '+(p.goal?'sua meta de peso':'o peso dentro da faixa saudável mais próximo do atual')+' e a cintura desejada. '+
+    '<b>Ideal</b>: IMC 22 ('+nf(wr.ref)+' kg) e cintura de 45% da altura, no meio da faixa saudável de cintura/altura (0,40 a 0,50). '+
+    (st[0].hipEst?'Sem quadril registrado, o quadril é estimado (est.). ':'Quadril da meta e do ideal estimado (est.) a partir do seu.');
+}
+$('#figSeg').addEventListener('click',function(ev){const b=ev.target.closest('button');if(!b)return;state.fig=b.dataset.f;renderAll()});
+
+
+syncProfileInputs();renderAll();initStore();
+</script>
+
+</body>
+</html>

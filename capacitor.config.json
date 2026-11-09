@@ -1,0 +1,9 @@
+{
+  "appId": "io.github.makturaalexandre.pesoecintura",
+  "appName": "Peso e Cintura",
+  "webDir": "www",
+  "android": { "adjustMarginsForEdgeToEdge": "force" },
+  "plugins": {
+    "LocalNotifications": { "smallIcon": "ic_stat_notify", "iconColor": "#2a78d6" }
+  }
+}
